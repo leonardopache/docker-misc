@@ -1,0 +1,26 @@
+docker build -f fileDockerFile -t Name/Repo:Version .
+
+## docker run -it --rm --cap-add=SYS_PTRACE -v /Users/lpache/scree-shots:/tmp/screenshots -v /Users/lpache/MetaTrader:/home/winer/.wine/drive_c/mt4 -p 5900:5900 repository:version
+
+docker run -it -v /tmp/screens:/tmp/screenshots -v /Users/lpache/MetaTrader:/home/winer/.wine/drive_c/mt4 -p 5900:5900 mt4headless:0.3
+
+python3 -c  "while 1: import time; print(time.strftime('%I:%M:%S %p', time.localtime())); time.sleep(10);"
+
+docker exec -it 0c0b916af206 python3 -c  "while 1: import time; print('Im alive... yet',time.strftime('%I:%M:%S %p', time.localtime())); time.sleep(2);"
+
+## docker exec b49e6b3df439 /docker/run_mt.sh
+
+########
+
+xvfb-run sh -c "wine python-3.7.6-amd64.exe /quiet TargetDir=C:\\Python Include_doc=0 InstallAllUsers=1 PrependPath=1; wineserver -w"
+xvfb-run sh -c "wine pip install --no-warn-script-location pyinstaller; wineserver -w"
+
+
+
+####### MT5
+docker build -f Dockerfile-mt5-w64 -t mt5/ubuntuwine:0.1 .
+
+docker run -it -v /tmp/screens:/tmp/screenshots -v /Users/lpache/MetaTrader5:/home/winer/.wine/drive_c/mt5 -p 5900:5900 mt5/ubuntuwine:0.1
+
+
+docker run -it -v /tmp/screens:/tmp/screenshots -v /Users/lpache/MetaTrader5:/home/winer/.wine/drive_c/mt5 -v //Users/lpache/git/algo-trading:/home/winer/git/algo-trading -p 5900:5900 mt5/ubuntuwine:0.1

@@ -1,0 +1,125 @@
+FROM ubuntu:16.04
+LABEL maintainer="test@test.com"
+
+WORKDIR /tmp/
+
+RUN set -ex; \
+    dpkg --add-architecture i386; \
+    DEBIAN_FRONTEND=noninteractive apt-get update -y; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    apt-transport-https \
+    binutils \
+    cabextract \
+    curl \
+    # To take screenshots of Xvfb display
+    imagemagick \
+    p7zip \
+    software-properties-common \
+    wget \
+    unzip \
+    xz-utils \
+    xvfb \
+    x11vnc \
+    net-tools \
+    vim 
+
+# Install wine
+RUN set -ex; \
+    wget -nc https://dl.winehq.org/wine-builds/winehq.key; \
+    apt-key add winehq.key; \
+    apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/; \
+    DEBIAN_FRONTEND=noninteractive apt-get update -y; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --install-recommends \
+    winehq-staging; \
+    rm winehq.key
+
+# Install winetricks
+RUN set -ex; \
+    wget https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks; \
+    chmod +x winetricks; \
+    mv winetricks /usr/local/bin
+
+# Install Python-Win
+RUN set -ex; \
+    wget https://www.python.org/ftp/python/3.7.6/python-3.7.6-amd64.exe; \
+    chmod +x python-3.7.6-amd64.exe; 
+
+COPY waitonprocess.sh \
+    screenshot.sh \
+    run_mt5.sh \
+    run_vnc.sh \
+    run_xvfb.sh \
+    wine-init.sh \
+    /docker/
+
+RUN set -e; \
+    chmod a+rx \
+    /docker/waitonprocess.sh \
+    /docker/screenshot.sh \
+    /docker/run_mt5.sh \
+    /docker/run_vnc.sh \
+    /docker/run_xvfb.sh \
+    /docker/wine-init.sh;
+
+ARG USER=winer
+ARG HOME=/home/$USER
+ARG USER_ID=501
+ENV USER=$USER \
+    HOME=$HOME
+
+#TODO winer as root for now
+RUN set -ex; \
+    groupadd $USER; \
+    useradd -u $USER_ID -d $HOME -g $USER -ms /bin/bash $USER; 
+
+USER $USER
+
+ENV WINEARCH=win64 \
+    WINEPREFIX=$HOME/.wine \
+    DISPLAY=:1 \
+    SCREEN_NUM=0 \
+    SCREEN_WHD=1366x768x24
+ENV MT5DIR=$WINEPREFIX/drive_c/mt5
+ENV PYDIR=$WINEPREFIX/drive_c/python
+
+# @TODO Install actual versions of Mono and Gecko dynamically
+ADD wine-gecko-mono $HOME/.cache
+USER root
+RUN chown $USER:$USER -R $HOME/.cache
+
+USER $USER
+RUN set -ex; \
+    wine wineboot --init; \
+    /docker/waitonprocess.sh wineserver;
+
+RUN set -ex; \
+    xvfb-run sh /docker/wine-init.sh
+
+RUN set -ex; \
+    winetricks -q win7; \
+    /docker/waitonprocess.sh wineserver; \
+    winetricks -q dotnet40; \
+    /docker/waitonprocess.sh wineserver; \
+    xvfb-run sh -c "\
+    wine \tmp\python-3.7.6-amd64.exe /quiet TargetDir=C:\\Python \
+    Include_doc=0 InstallAllUsers=1 PrependPath=1; \
+    wineserver -w"; \
+    xvfb-run sh -c "\
+    wine pip install --no-warn-script-location pyinstaller; \
+    wineserver -w"; \
+    /docker/waitonprocess.sh wineserver;
+
+USER root
+RUN mkdir -p /tmp/screenshots/; \
+    chown winer:winer /tmp/screenshots/
+
+USER $USER
+WORKDIR $MT5DIR
+VOLUME /tmp/screenshots/
+
+ENTRYPOINT ["/bin/bash"]
+# CMD ["/docker/run_xvfb.sh;/docker/run_vnc.sh"]
+
+# @TODO Add ability to list logs which content should be redirected to STDOUT with a prefix
+# @TODO Add ability to change TZ of the OS
+
