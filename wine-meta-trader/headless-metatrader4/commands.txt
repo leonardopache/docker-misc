@@ -24,3 +24,13 @@ docker run -it -v /tmp/screens:/tmp/screenshots -v /Users/lpache/MetaTrader5:/ho
 
 
 docker run -it -v /tmp/screens:/tmp/screenshots -v /Users/lpache/MetaTrader5:/home/winer/.wine/drive_c/mt5 -v //Users/lpache/git/algo-trading:/home/winer/git/algo-trading -p 5900:5900 mt5/ubuntuwine:0.1
+
+
+###################################
+V1.0
+- Wine7(win10) + Xserver + VNC  + MT5
+
+- docker build -f Dockerfile-mt5-w64 -t mt5/ubuntuwine:1.0 .
+- docker run -v /tmp/screens:/tmp/screenshots -v /Volumes/lpache/MetaTrader5:/home/winer/.wine/drive_c/mt5 -p 5901:5900 mt5/ubuntuwine:1.0
+- docker stop e9ceb80d4bf8
+- docker start -ai e9ceb80d4bf8

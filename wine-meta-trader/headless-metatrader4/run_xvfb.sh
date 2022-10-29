@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Break script on any non-zero status of any command
-set -e
 
 export DISPLAY SCREEN_NUM SCREEN_WHD
 

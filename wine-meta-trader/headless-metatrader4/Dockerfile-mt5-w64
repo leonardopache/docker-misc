@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 LABEL maintainer="test@test.com"
 
 WORKDIR /tmp/
@@ -21,7 +21,7 @@ RUN set -ex; \
     xvfb \
     x11vnc \
     net-tools \
-    vim 
+    gpg-agent
 
 # Install wine
 RUN set -ex; \
@@ -41,8 +41,8 @@ RUN set -ex; \
 
 # Install Python-Win
 RUN set -ex; \
-    wget https://www.python.org/ftp/python/3.7.6/python-3.7.6-amd64.exe; \
-    chmod +x python-3.7.6-amd64.exe; 
+    wget https://github.com/pbatard/rufus/releases/download/v3.20/rufus-3.20.exe; \
+    chmod +x rufus-3.20.exe;
 
 COPY waitonprocess.sh \
     screenshot.sh \
@@ -90,23 +90,20 @@ RUN chown $USER:$USER -R $HOME/.cache
 USER $USER
 RUN set -ex; \
     wine wineboot --init; \
+    xvfb-run sh /docker/wine-init.sh;
+
+RUN set -ex; \
+    winetricks -q win10; wineserver -w\
     /docker/waitonprocess.sh wineserver;
 
-RUN set -ex; \
-    xvfb-run sh /docker/wine-init.sh
+#RUN set -ex; \
+#    wget https://www.python.org/ftp/python/3.9.9/python-3.9.9-amd64.exe; \
+#    #chmod +x python-3.9.9-amd64.exe;
 
-RUN set -ex; \
-    winetricks -q win7; \
-    /docker/waitonprocess.sh wineserver; \
-    winetricks -q dotnet40; \
-    /docker/waitonprocess.sh wineserver; \
-    xvfb-run sh -c "\
-    wine \tmp\python-3.7.6-amd64.exe /quiet TargetDir=C:\\Python \
-    Include_doc=0 InstallAllUsers=1 PrependPath=1; \
-    wineserver -w"; \
-    xvfb-run sh -c "\
-    wine pip install --no-warn-script-location pyinstaller; \
-    wineserver -w"; \
+RUN set -x \
+    wget -nv "https://www.python.org/ftp/python/3.9.9/python-3.9.9-amd64.exe"; \
+    wine msiexec /i "python-3.9.9-amd64.exe"; \
+    #wine /i python-3.9.9-amd64.exe /q; \
     /docker/waitonprocess.sh wineserver;
 
 USER root
@@ -118,7 +115,7 @@ WORKDIR $MT5DIR
 VOLUME /tmp/screenshots/
 
 ENTRYPOINT ["/bin/bash"]
-# CMD ["/docker/run_xvfb.sh;/docker/run_vnc.sh"]
+CMD ["/docker/run_vnc.sh"]
 
 # @TODO Add ability to list logs which content should be redirected to STDOUT with a prefix
 # @TODO Add ability to change TZ of the OS
